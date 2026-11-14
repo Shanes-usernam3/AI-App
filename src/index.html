@@ -45,9 +45,21 @@
     <div class="menu">
       <button data-action="export">Export backup (.json)</button>
       <label class="as-btn">Import backup<input type="file" id="importFile" accept="application/json,.json" hidden /></label>
+      <button data-action="copy-backup">Copy backup to clipboard</button>
       <button data-action="about">About</button>
       <button class="ghost" data-action="close-dialog">Close</button>
     </div>
+  </dialog>
+
+  <dialog id="askDialog">
+    <form method="dialog">
+      <p id="askMsg"></p>
+      <textarea id="askText" rows="6" readonly hidden></textarea>
+      <div class="row-end">
+        <button value="no" class="ghost" id="askNo">Cancel</button>
+        <button value="yes" class="primary" id="askYes">OK</button>
+      </div>
+    </form>
   </dialog>
 
   <div id="toast" role="status"></div>

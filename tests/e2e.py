@@ -66,6 +66,14 @@ with sync_playwright() as p:
     expect(pg.locator('#title')).to_have_text('Roommates')
     expect(pg.locator('#view')).to_contain_text('Everyone is square')
 
+    # In-page confirm: cancel keeps the entry, OK deletes it
+    pg.click('[data-tab=expenses]')
+    n = pg.locator('[data-action=del-expense]').count()
+    pg.locator('[data-action=del-expense]').first.click(); pg.click('#askNo')
+    expect(pg.locator('[data-action=del-expense]')).to_have_count(n)
+    pg.locator('[data-action=del-expense]').first.click(); pg.click('#askYes')
+    expect(pg.locator('[data-action=del-expense]')).to_have_count(n - 1)
+
     # Back home, sample group works
     pg.click('#backBtn')
     expect(pg.locator('.group-link')).to_have_count(1)

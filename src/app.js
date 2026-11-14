@@ -30,11 +30,26 @@ function toast(msg) {
   clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
+// In-page replacement for confirm/alert/prompt (those are blocked in sandboxed frames).
+function ask(msg, { ok = 'OK', cancel = 'Cancel', text = null } = {}) {
+  const d = $('#askDialog');
+  $('#askMsg').textContent = msg;
+  $('#askYes').textContent = ok;
+  $('#askNo').hidden = !cancel; $('#askNo').textContent = cancel || '';
+  const ta = $('#askText'); ta.hidden = text == null; ta.value = text ?? '';
+  d.returnValue = '';
+  return new Promise((resolve) => {
+    d.addEventListener('close', () => resolve(d.returnValue === 'yes'), { once: true });
+    d.showModal();
+    if (text != null) ta.select();
+  });
+}
+
 // ---------- routing ----------
 function go(groupId, tab) {
   ui.groupId = groupId; if (tab) ui.tab = tab;
   const hash = groupId ? `#/g/${groupId}/${ui.tab}` : '#/';
-  if (location.hash !== hash) history.pushState(null, '', hash);
+  if (location.hash !== hash) try { history.pushState(null, '', hash); } catch {}
   render();
 }
 function fromHash() {
@@ -199,15 +214,15 @@ const actions = {
     T.addExpense(g, { description: 'Firewood & ice', amount: '28.75', paidBy: m, weights: all });
     state.groups.unshift(g); save(); go(g.id, 'balances');
   },
-  'del-expense': (el) => {
-    const g = group(); if (!confirm('Delete this entry?')) return;
+  'del-expense': async (el) => {
+    const g = group(); if (!(await ask('Delete this entry?', { ok: 'Delete' }))) return;
     T.deleteExpense(g, el.dataset.id); save(); render();
   },
   'del-member': (el) => {
     try { T.removeMember(group(), el.dataset.id); save(); render(); } catch (e) { toast(e.message); }
   },
-  'del-group': () => {
-    const g = group(); if (!confirm(`Delete “${g.name}” and all its expenses?`)) return;
+  'del-group': async () => {
+    const g = group(); if (!(await ask(`Delete “${g.name}” and all its expenses?`, { ok: 'Delete' }))) return;
     state.groups = state.groups.filter((x) => x.id !== g.id); save(); go(null);
   },
   settle: (el) => {
@@ -220,7 +235,7 @@ const actions = {
     try {
       if (navigator.share && matchMedia('(pointer: coarse)').matches) await navigator.share({ text });
       else { await navigator.clipboard.writeText(text); toast('Summary copied'); }
-    } catch (e) { if (e?.name !== 'AbortError') prompt('Copy this summary:', text); }
+    } catch (e) { if (e?.name !== 'AbortError') ask('Copy this summary:', { cancel: null, text }); }
   },
   export: () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
@@ -228,7 +243,13 @@ const actions = {
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     $('#menuDialog').close(); toast('Backup downloaded');
   },
-  about: () => { $('#menuDialog').close(); alert('Tabby 1.0 — split costs offline.\nYour data never leaves this device. Use Export to back it up.'); },
+  'copy-backup': async () => {
+    const text = JSON.stringify(state);
+    $('#menuDialog').close();
+    try { await navigator.clipboard.writeText(text); toast('Backup copied'); }
+    catch { ask('Copy this backup and keep it somewhere safe:', { cancel: null, text }); }
+  },
+  about: () => { $('#menuDialog').close(); ask('Tabby 1.0 — split costs offline.\nYour data never leaves this device. Use Export to back it up.', { cancel: null }); },
 };
 
 document.addEventListener('click', (e) => {
@@ -248,8 +269,9 @@ $('#importFile').addEventListener('change', async (e) => {
   const file = e.target.files[0]; if (!file) return;
   try {
     const data = T.validateState(JSON.parse(await file.text()));
-    if (!confirm(`Replace current data with ${data.groups.length} group(s) from backup?`)) return;
-    state = data; save(); $('#menuDialog').close(); go(null); toast('Backup restored');
+    $('#menuDialog').close();
+    if (!(await ask(`Replace current data with ${data.groups.length} group(s) from backup?`, { ok: 'Replace' }))) return;
+    state = data; save(); go(null); toast('Backup restored');
   } catch (err) { toast('Import failed: ' + err.message); }
   finally { e.target.value = ''; }
 });

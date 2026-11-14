@@ -1,0 +1,8 @@
+[build]
+  publish = "src"
+  command = "npm test"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"

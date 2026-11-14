@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Tabby — split expenses</title>
+  <meta name="description" content="Split trip, roommate and dinner costs offline. No account, no tracking." />
+  <meta name="theme-color" content="#14151a" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn" id="backBtn" data-action="home" aria-label="Back" hidden>‹</button>
+    <h1 id="title">Tabby</h1>
+    <button class="icon-btn" id="menuBtn" data-action="menu" aria-label="Menu">⋯</button>
+  </header>
+
+  <main id="view" aria-live="polite"></main>
+
+  <button class="fab" id="fab" data-action="new-expense" aria-label="Add expense" hidden>＋</button>
+
+  <dialog id="expenseDialog">
+    <form id="expenseForm" method="dialog" novalidate>
+      <h2>Add expense</h2>
+      <label>What for?<input name="description" maxlength="80" placeholder="Groceries" autocomplete="off" required /></label>
+      <label>Amount<input name="amount" inputmode="decimal" placeholder="0.00" autocomplete="off" required /></label>
+      <label>Paid by<select name="paidBy"></select></label>
+      <fieldset>
+        <legend>Split <span class="seg"><button type="button" data-mode="equal" class="on">Equally</button><button type="button" data-mode="shares">By shares</button></span></legend>
+        <div id="splitRows"></div>
+        <p class="hint" id="splitPreview"></p>
+      </fieldset>
+      <p class="error" id="expenseError" role="alert"></p>
+      <div class="row-end">
+        <button type="button" class="ghost" data-action="close-dialog">Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="menuDialog">
+    <div class="menu">
+      <button data-action="export">Export backup (.json)</button>
+      <label class="as-btn">Import backup<input type="file" id="importFile" accept="application/json,.json" hidden /></label>
+      <button data-action="about">About</button>
+      <button class="ghost" data-action="close-dialog">Close</button>
+    </div>
+  </dialog>
+
+  <div id="toast" role="status"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
